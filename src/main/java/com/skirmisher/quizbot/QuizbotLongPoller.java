@@ -24,7 +24,7 @@ public class QuizbotLongPoller extends TelegramLongPollingBot {
         if (!update.hasMessage() || !update.getMessage().isUserMessage() || !update.getMessage().hasText() || update.getMessage().getText().isEmpty())
             return;
 
-        if(getRoundMasters().contains(update.getMessage().getChatId()) || update.getMessage().getChatId() == 715180082){ //(CHANGE: MAKE IT WHOEVER IS ASSIGNED TO ROUND? both can do it)
+        if(getRoundMasters().contains(update.getMessage().getChatId()) || update.getMessage().getChatId().equals(config("creatorid"))){ //(CHANGE: MAKE IT WHOEVER IS ASSIGNED TO ROUND? both can do it)
             //quizmaster
             System.out.println("Quizmaster: " + update.getMessage().getChat().getUserName() + " sent message " + update.getMessage().getText());
 
