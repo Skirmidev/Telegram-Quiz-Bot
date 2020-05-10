@@ -459,6 +459,7 @@ public class QuizbotLongPoller extends TelegramLongPollingBot {
                     UserBean newbie = new UserBean();
                     newbie.setChatID(update.getMessage().getChatId());
                     newbie.setJoined(true);
+                    newbie.setUsername(update.getMessage().getChat().getUserName());
                     users.add(newbie);
                     updated=true;
                 }
@@ -559,7 +560,6 @@ public class QuizbotLongPoller extends TelegramLongPollingBot {
                         for(AnswerBean answer : answers){
                             if(answer.getUserID().equals(update.getMessage().getChatId()) && answer.getQuestionID() == currentQuestion){
                                 hasAnsweredPreviously = true;
-                                answer.setQuestionID(currentQuestion);
                                 answer.setAnswer(update.getMessage().getText());
                             }
                         }
@@ -569,6 +569,7 @@ public class QuizbotLongPoller extends TelegramLongPollingBot {
                             newAnswer.setAnswer(update.getMessage().getText());
                             newAnswer.setQuestionID(currentQuestion);
                             newAnswer.setUserID(update.getMessage().getChatId());
+                            newAnswer.setUsername(update.getMessage().getChat().getUserName());
                             answers.add(newAnswer);
                         }
 

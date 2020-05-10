@@ -12,4 +12,6 @@ public class AnswerBean extends DBLoader {
     private Long userID;
     @CsvBindByName(column = "Answer")
     private String answer;
+    @CsvBindByName(column = "Username")
+    private String username;
 }
