@@ -6,28 +6,30 @@
     <groupId>com.skirmisher</groupId>
     <artifactId>telegram-quizbot</artifactId>
     <packaging>jar</packaging>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
 
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
+        <dockerfile-maven-version>1.4.12</dockerfile-maven-version>
+        <telegram.bots.version>5.0.1</telegram.bots.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.telegram</groupId>
             <artifactId>telegrambots</artifactId>
-            <version>4.8.1</version>
+            <version>${telegram.bots.version}</version>
         </dependency>
         <dependency>
             <groupId>org.telegram</groupId>
             <artifactId>telegrambots-abilities</artifactId>
-            <version>4.8.1</version>
+            <version>${telegram.bots.version}</version>
         </dependency>
         <dependency>
             <groupId>com.opencsv</groupId>
             <artifactId>opencsv</artifactId>
-            <version>4.1</version>
+            <version>5.3</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -35,42 +37,233 @@
             <version>1.18.12</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>42.2.18.jre7</version>
+        </dependency>
     </dependencies>
 
     <build>
         <plugins>
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-shade-plugin</artifactId>
-            <version>2.1</version>
-            <executions>
-                <execution>
-                    <phase>package</phase>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>2.1</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <outputFile>target\telegram-quizbot.jar</outputFile>
+                            <overwrite>false</overwrite>
+                            <transformers>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>com.skirmisher.obibital.BotLauncher</mainClass>
+                                </transformer>
+                            </transformers>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>com.spotify</groupId>
+                <artifactId>dockerfile-maven-plugin</artifactId>
+                <version>${dockerfile-maven-version}</version>
+                <executions>
+                    <execution>
+                    <id>build and push docker image</id>
                     <goals>
-                        <goal>shade</goal>
+                        <goal>build</goal>
+                        <goal>push</goal>
                     </goals>
-                    <configuration>
-                        <transformers>
-                            <transformer
-                                    implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                <mainClass>com.skirmisher.quizbot.BotRunnerLongPoller</mainClass>
-<!--                                <mainClass>com.skirmisher.quizbot.BotRunnerAbility</mainClass>-->
-                            </transformer>
-                        </transformers>
-                        <filters>
-                            <filter>
-                                <artifact>*:*</artifact>
-                                <excludes>
-                                    <exclude>META-INF/*.SF</exclude>
-                                    <exclude>META-INF/*.DSA</exclude>
-                                    <exclude>META-INF/*.RSA</exclude>
-                                </excludes>
-                            </filter>
-                        </filters>
-                    </configuration>
-                </execution>
-            </executions>
-        </plugin>
-    </plugins>
+                    </execution>
+                </executions>
+                <configuration>
+                    <repository>${project.artifactId}</repository>
+                    <buildArgs>
+                        <JAR_FILE>${project.build.finalName}.jar</JAR_FILE>
+                    </buildArgs>
+                    <imageTags>
+                        <imageTag>${project.version}</imageTag>
+                        <imageTag>latest</imageTag>
+                    </imageTags>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.2.1</version>
+                <executions>
+                    <execution>
+                        <id>stop existing container</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <successCodes>
+                                <successCode>0</successCode>
+                                <successCode>1</successCode>
+                            </successCodes>
+                            <workingDirectory>${project.basedir}</workingDirectory> 
+                            <executable>docker</executable>
+                            <arguments>
+                                <argument>stop</argument>
+                                <argument>avalitech-quizbot</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>      
+                    <execution>
+                        <id>remove existing container</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <successCodes>
+                                <successCode>0</successCode>
+                                <successCode>1</successCode>
+                            </successCodes>
+                            <workingDirectory>${project.basedir}</workingDirectory>
+                            <executable>docker</executable>
+                            <arguments>
+                                <argument>rm</argument>
+                                <argument>avalitech-quizbot</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>     
+
+                    <!-- OPTIONAL volume refreshing -->
+                    <execution>
+                        <id>remove dbconfig volume</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <successCodes>
+                                <successCode>0</successCode>
+                                <successCode>1</successCode>
+                            </successCodes>
+                            <workingDirectory>${project.basedir}</workingDirectory>
+                            <executable>docker</executable>
+                            <arguments>
+                                <argument>volume</argument>
+                                <argument>rm</argument>
+                                <argument>quizbot-db-config</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>    
+                    <execution>
+                        <id>remove dbtables volume</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <successCodes>
+                                <successCode>0</successCode>
+                                <successCode>1</successCode>
+                            </successCodes>
+                            <workingDirectory>${project.basedir}</workingDirectory>
+                            <executable>docker</executable>
+                            <arguments>
+                                <argument>volume</argument>
+                                <argument>rm</argument>
+                                <argument>quizbot-db-tablespace</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>    
+
+
+                    <!-- -->
+
+                    <execution>
+                        <id>create dbconfig volume</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <successCodes>
+                                <successCode>0</successCode>
+                            </successCodes>
+                            <workingDirectory>${project.basedir}</workingDirectory>
+                            <executable>docker</executable>
+                            <arguments>
+                                <argument>volume</argument>
+                                <argument>create</argument>
+                                <argument>quizbot-db-config</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>    
+                    <execution>
+                        <id>create tablespace volume</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <successCodes>
+                                <successCode>0</successCode>
+                            </successCodes>
+                            <workingDirectory>${project.basedir}</workingDirectory>
+                            <executable>docker</executable>
+                            <arguments>
+                                <argument>volume</argument>
+                                <argument>create</argument>
+                                <argument>quizbot-db-tablespace</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>    
+                    <execution>
+                        <id>create new container</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <workingDirectory>${project.basedir}</workingDirectory>
+                            <executable>docker</executable>
+                            <arguments>
+                                <argument>run</argument>
+                                <argument>--name</argument>
+                                <argument>avalitech-quizbot</argument>
+                                <argument>-it</argument>
+                                <argument>-v</argument>
+                                <argument>quizbot-db-config:/database/config</argument>
+                                <argument>-v</argument>
+                                <argument>quizbot-db-tablespace:/database/tables</argument>
+                                <argument>--detach</argument>
+                                <argument>--restart</argument>
+                                <argument>unless-stopped</argument>
+                                <argument>telegram-quizbot</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>                          
+                </executions>
+            </plugin>
+        </plugins>
     </build>
 </project>
+
+
+<!--
+                                <argument>z-z-user</argument>
+                                <argument>postgres</argument> -->
