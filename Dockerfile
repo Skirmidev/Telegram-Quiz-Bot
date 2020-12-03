@@ -16,7 +16,6 @@ COPY target/telegram-quizbot.jar /telegram-quizbot.jar
 COPY docker-entrypoint.sh /
 
 COPY /src/main/data/configValues.csv /
-COPY /src/main/data/moduleValues.csv /
 
 #fix line endings windows -> linux
 RUN sed -i 's/\r$//' configValues.csv

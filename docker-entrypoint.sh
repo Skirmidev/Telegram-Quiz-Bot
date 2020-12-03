@@ -39,13 +39,13 @@ psql -U postgres -d quizbot-db -c"CREATE TABLE IF NOT EXISTS users ( userid inte
 psql -U postgres -d quizbot-db -c"CREATE TABLE IF NOT EXISTS participants ( userid integer REFERENCES users (userid), chatstate VARCHAR ( 50 ), registrationdate TIMESTAMP default current_timestamp);"
 
 # CREATE TABLE: ROUNDS
-psql -U postgres -d quizbot-db -c"CREATE TABLE IF NOT EXISTS rounds ( round integer UNIQUE NOT NULL, roundmaster integer UNIQUE NOT NULL REFERENCES users (userid));"
+psql -U postgres -d quizbot-db -c"CREATE TABLE IF NOT EXISTS rounds ( round serial UNIQUE NOT NULL, roundmaster integer UNIQUE NOT NULL REFERENCES users (userid));"
 
 # CREATE TABLE: QUESTIONS
 psql -U postgres -d quizbot-db -c"CREATE TABLE IF NOT EXISTS questions ( round integer REFERENCES rounds (round), questionid integer NOT NULL, questiondata VARCHAR (400));"
 
 # CREATE TABLE: ANSWERS
-psql -U postgres -d quizbot-db -c"CREATE TABLE IF NOT EXISTS answers ( round integer REFERENCES rounds (round), questionid integer NOT NULL, userid integer REFERENCES participants (userid), answer VARCHAR (400));"
+psql -U postgres -d quizbot-db -c"CREATE TABLE IF NOT EXISTS answers ( round integer REFERENCES rounds (round), questionid integer NOT NULL, userid integer REFERENCES users (userid), answer VARCHAR (400));"
 
 # CREATE UNIQUE QUESTION INDEX
 psql -U postgres -d quizbot-db -c"CREATE UNIQUE INDEX idx_question ON questions(round, questionid);"

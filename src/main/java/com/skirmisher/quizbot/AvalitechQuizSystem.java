@@ -13,7 +13,6 @@ public class AvalitechQuizSystem extends TelegramLongPollingBot {
     boolean debug = false;
 
     Long groupId = 0l;
-    Long modChatId = 0l;
     List<Long> admins = new ArrayList<>();
 
     //issue is not caused by wrong values present. :/
@@ -24,36 +23,6 @@ public class AvalitechQuizSystem extends TelegramLongPollingBot {
     @Override
     public void onUpdateReceived(final Update update) {
         Context context = new Context();
-
-        //
-        // if(group){
-        //     if(message){
-        //         /controls
-        //             deletes existing controls widget
-        //             shows current master, question, next question, remaining questions in round etc.
-        //             shows button for [next question] (callback only works for roundmaster of that question)
-        //     } else if (callback){
-        //         nextquestion 
-        //     }
-        // } else { //user 
-        //     if(participant){
-        //         strsplit[chatstate]
-        //         switch(chatstate[1]){
-        //             case notstarted
-        //                 ->quiz has not started, quiz will begin at time. [deregister/twitchlink/t&cs]
-        //             case answer
-        //                 input will assign answer, respond with 'you answered X to question Y'
-        //             case edit
-        //                 show list of editables (questions, answers, buttons to select what to edit)
-        //             case editanswer
-        //                 input will assign answer to round [2] question [3], then return to answer state for latest question
-        //             case quizended
-        //                 the quiz has ended, we hope you enjoyed it!
-        //         }
-        //     } else { //not registered
-        //         ->send welcome message
-        //     }
-        // }
         //ALL USER CALLBACKS should delete the message associated with the callback, keeps things clean
         //ALL USER MESSAGES should be deleted, keeps things clean
         //IF ROUND ADVANCES while in edit mode, need to delete the editmode message. question advances are a user problem (go back and edit)
@@ -76,7 +45,7 @@ public class AvalitechQuizSystem extends TelegramLongPollingBot {
             if(update.getMessage().getChatId().equals(groupId)) {
                 //message in the group, process as normal
                 QuizManager.runControl(context, update, this);
-            } else if (QuizDBLoader.hasParticipant(update.getMessage().getChatId())){
+            } else if (QuizDBLoader.hasParticipant(update.getMessage().getChatId().intValue())){
                 //message from a participant, process appropriately
                 QuizManager.runParticipant(context, update, this);
             } else {
@@ -103,10 +72,6 @@ public class AvalitechQuizSystem extends TelegramLongPollingBot {
         return QuizDBLoader.configValue("bottoken");
     }
     
-    public Long getModChatId() {
-        return modChatId;
-    }
-    
     public Long getGroupChatId() {
         return groupId;
     }
@@ -127,9 +92,7 @@ public class AvalitechQuizSystem extends TelegramLongPollingBot {
     }
 
     public void reloadConfig(){
-        groupId = Long.parseLong(QuizDBLoader.configValue("groupId"));
-        modChatId = Long.parseLong(DBLoader.configValue("modChatId"));
-        //admins=DBLoader.getAdmins();
+        groupId = Long.parseLong(QuizDBLoader.configValue("quizmasterchat"));
     }
 }
 

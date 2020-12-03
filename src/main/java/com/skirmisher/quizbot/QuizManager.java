@@ -21,18 +21,33 @@ public class QuizManager {
     static char prefix = '/';
 
     public static void runControl(Context context, Update update, AvalitechQuizSystem bot){
+        //if user not already in user list, add them
+        if(!QuizDBLoader.userExists(update.getMessage().getFrom().getId())){
+            //add user to db
+            int id = update.getMessage().getFrom().getId();
+            String username = "";
+            if(update.getMessage().getFrom().getUserName() != null){
+                username = update.getMessage().getFrom().getUserName();
+            }
+            String name = update.getMessage().getFrom().getFirstName() + update.getMessage().getFrom().getLastName();
+            QuizDBLoader.addManagingUser(id, username, name);
+        }
+
+
         if(update.getMessage().hasText() && update.getMessage().getText().charAt(0) == prefix){
             if(QuizDBLoader.quizStarted()){
+                System.out.println("RunControl:quiz Started");
                 switch(update.getMessage().getText()){
                     case "/controls":
                         resetController(update, bot);
                         break;
                 }
             } else {
+                System.out.println("RunControl:quiz Not Started");
                 String[] args = update.getMessage().getText().split(" ");
                 args[0] = args[0].toLowerCase();
 
-                switch(update.getMessage().getText()){
+                switch(args[0]){
                     case "/help":
                         help(update, bot);
                         break;
@@ -48,10 +63,10 @@ public class QuizManager {
                     case "/removequestion": //questionid
                         removeQuestion(update, bot, args);
                         break;
-                    case "/showcurrentquiz":
+                    case "/showcurrent":
                         showCurrent(update, bot);
                         break;
-                    case "/myround":
+                    case "/showmyround":
                         showMyRound(update, bot);
                         break;
                 }
@@ -63,6 +78,7 @@ public class QuizManager {
     public static void runParticipant(Context context, Update update, AvalitechQuizSystem bot){
         String chatState = QuizDBLoader.getUserState(update.getMessage().getFrom().getId());
         String [] stateSplit = chatState.split(":");
+        System.out.println("RunParticipant: " + stateSplit[0]);
 
         switch(stateSplit[0]){
             case "notstarted": //send a 'quiz has not started' message [deregister/twitchlink/t&cs]
@@ -80,8 +96,9 @@ public class QuizManager {
 
     
     public static void runUnregistered(Context context, Update update, AvalitechQuizSystem bot){
+        System.out.println("RunUnregistered: ");
         //delete existing message
-        if(QuizDBLoader.beforeQuizStart()){
+        if(!QuizDBLoader.quizStarted()){
             //send the galactic standard greeting
             final List<InlineKeyboardButton> keyboard = new ArrayList<InlineKeyboardButton>(3);
 
@@ -147,6 +164,7 @@ public class QuizManager {
     // CONTROL
     //
     public static void resetController(Update update, AvalitechQuizSystem bot){
+        System.out.println("QuizManager: resetController");
         //delete existing controller
         if(QuizDBLoader.configValue("controllermessage").equals("")){
             //no existing controller
@@ -162,8 +180,8 @@ public class QuizManager {
 
         int currentRound = Integer.parseInt(QuizDBLoader.configValue("currentround"));
         int currentQuestion = Integer.parseInt(QuizDBLoader.configValue("currentquestion"));
-        boolean lastQuestionInRound = QuizDBLoader.isLastQuestionInRound();
-        boolean lastRoundInQuiz = QuizDBLoader.isLastRoundInQuiz();
+        boolean lastQuestionInRound = QuizDBLoader.isLastQuestionInRound(currentRound, currentQuestion);
+        boolean lastRoundInQuiz = QuizDBLoader.isLastRoundInQuiz(currentRound);
         User currentRoundMaster = QuizDBLoader.roundMasterForRound(currentRound);
         User nextRoundMaster = QuizDBLoader.roundMasterForRound(currentRound+1);
 
@@ -212,6 +230,7 @@ public class QuizManager {
     }
 
     public static void help(Update update, AvalitechQuizSystem bot){
+        System.out.println("QuizManager: help");
         SendMessage message = new SendMessage();
         message.setChatId(update.getMessage().getChatId().toString());
 
@@ -239,6 +258,7 @@ public class QuizManager {
     
     public static void addRound(Update update, AvalitechQuizSystem bot){
         //if this user doesn't already have a round, add one
+        System.out.println("QuizManager: addRound");
 
         SendMessage message = new SendMessage();
         message.setChatId(update.getMessage().getChatId().toString());
@@ -260,6 +280,7 @@ public class QuizManager {
     }
     
     public static void addQuestion(Update update, AvalitechQuizSystem bot, String[] args){
+        System.out.println("QuizManager: addQuestion");
         //check if user has a round
         //if true, add this question to that round
 
@@ -276,7 +297,7 @@ public class QuizManager {
         if(questionId == 0){
             txt = "Failed to add question - do you have a round?";
         } else {
-            txt = "Succesfully added question, ID: " + questionId;
+            txt = "Succesfully added question";
         }
 
         message.setText(txt);
@@ -290,6 +311,7 @@ public class QuizManager {
     }
     
     public static void removeRound(Update update, AvalitechQuizSystem bot){
+        System.out.println("QuizManager: removeRound");
         SendMessage message = new SendMessage();
         message.setChatId(update.getMessage().getChatId().toString());
         String txt = QuizDBLoader.removeRound(update.getMessage().getFrom().getId());
@@ -305,6 +327,7 @@ public class QuizManager {
     }
     
     public static void removeQuestion(Update update, AvalitechQuizSystem bot, String[] args){
+        System.out.println("QuizManager: removeQuestion");
         if(args.length > 1){
             int questionId = Integer.parseInt(args[1]);
 
@@ -327,6 +350,7 @@ public class QuizManager {
     }
     
     public static void showCurrent(Update update, AvalitechQuizSystem bot){
+        System.out.println("QuizManager: showCurrent");
         SendMessage message = new SendMessage();
         message.setChatId(update.getMessage().getChatId().toString());
         String txt = QuizDBLoader.getFullQuiz();
@@ -342,6 +366,7 @@ public class QuizManager {
     }
     
     public static void showMyRound(Update update, AvalitechQuizSystem bot){
+        System.out.println("QuizManager: showMyRound");
         SendMessage message = new SendMessage();
         message.setChatId(update.getMessage().getChatId().toString());
         String txt = QuizDBLoader.getRoundQuestions(update.getMessage().getFrom().getId());
@@ -361,6 +386,7 @@ public class QuizManager {
     // PARTICIPANT //
     /////////////////
     public static void notStarted(Update update, AvalitechQuizSystem bot){
+        System.out.println("QuizManager: Participant: notStarted");
         //delete existing message
 
         DeleteMessage deleteControl = new DeleteMessage(update.getMessage().getChatId().toString(), QuizDBLoader.getParticipantMessage(update.getMessage().getFrom().getId()));
@@ -423,6 +449,7 @@ public class QuizManager {
     }
     
     public static void answering(Update update, AvalitechQuizSystem bot){
+        System.out.println("QuizManager: Participant: answering");
         //delete existing message
 
         DeleteMessage deleteControl = new DeleteMessage(update.getMessage().getChatId().toString(), QuizDBLoader.getParticipantMessage(update.getMessage().getFrom().getId()));
@@ -480,6 +507,7 @@ public class QuizManager {
     }
 
     public static void Awaiting(Update update, AvalitechQuizSystem bot){
+        System.out.println("QuizManager: Participant: awaiting");
         //delete existing message
         DeleteMessage deleteUser = new DeleteMessage(update.getMessage().getChatId().toString(), update.getMessage().getMessageId());
 
@@ -492,6 +520,7 @@ public class QuizManager {
     }
 
     public static void editSelect(Update update, AvalitechQuizSystem bot){
+        System.out.println("QuizManager: Participant: editSelect");
         //delete existing message
         DeleteMessage deleteUser = new DeleteMessage(update.getMessage().getChatId().toString(), update.getMessage().getMessageId());
 
@@ -504,6 +533,7 @@ public class QuizManager {
     }
     
     public static void edit(Update update, AvalitechQuizSystem bot, String [] args){
+        System.out.println("QuizManager: Participant: edit");
         //delete existing message
 
         DeleteMessage deleteControl = new DeleteMessage(update.getMessage().getChatId().toString(), QuizDBLoader.getParticipantMessage(update.getMessage().getFrom().getId()));
@@ -559,6 +589,7 @@ public class QuizManager {
     }
     
     public static void quizEnded(Update update, AvalitechQuizSystem bot){
+        System.out.println("QuizManager: Participant: quizEnded");
         //delete existing message
         DeleteMessage deleteUser = new DeleteMessage(update.getMessage().getChatId().toString(), update.getMessage().getMessageId());
 

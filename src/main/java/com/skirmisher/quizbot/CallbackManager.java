@@ -17,6 +17,8 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import java.util.List;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import java.util.Collections;
+import java.util.Map;
+import java.util.HashMap;
 
 public class CallbackManager {
 
@@ -271,7 +273,7 @@ public class CallbackManager {
         int userId = update.getCallbackQuery().getFrom().getId();
 
         
-        ArrayList<String> editables = QuizDBLoader.getEditables(currentRound, userId);
+        HashMap<String, String> editables = QuizDBLoader.getEditables(currentRound, userId);
 
         if(editables.size() > 0){
             DeleteMessage deleteControl = new DeleteMessage(userId+"", QuizDBLoader.getParticipantMessage(userId));
@@ -285,6 +287,10 @@ public class CallbackManager {
             final List<InlineKeyboardButton> keyboard = new ArrayList<InlineKeyboardButton>(editables.size()+1);
 
             String response = "";
+
+            for(Map.Entry<String, String> editab : editables.entrySet()){
+
+            }
             for(int i = 0; i < editables.size(); i++){
                 int j = i+1;
                 response = response + "Question " + j + ": " + editables.get(i) + "\n";
