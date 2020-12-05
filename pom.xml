@@ -150,7 +150,7 @@
                     </execution>     
 
                     <!-- OPTIONAL volume refreshing -->
-                    <!-- <execution>
+                    <execution>
                         <id>remove dbconfig volume</id>
                         <phase>install</phase>
                         <goals>
@@ -189,7 +189,7 @@
                                 <argument>quizbot-db-tablespace</argument>
                             </arguments>
                         </configuration>
-                    </execution>     -->
+                    </execution>    
 
 
                     <!-- -->

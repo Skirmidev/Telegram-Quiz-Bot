@@ -40,8 +40,10 @@ public class QuizDBLoader {
             
             ResultSet rs = st.executeQuery(query);
 
-            rs.next();
-            String returnVal = rs.getString(1);
+            String returnVal = "";
+            if(rs.next()){
+                returnVal = rs.getString(1);
+            }
             
             st.close();
             return returnVal;
@@ -151,16 +153,20 @@ public class QuizDBLoader {
     public static boolean isLastQuestionInRound(int roundId, int questionId){
         String query = "SELECT questionid FROM questions WHERE round = '" + roundId + "' ORDER BY questionid DESC LIMIT 1";
 
+        
         try {
             Connection con = DriverManager.getConnection(url, user, null);
             Statement st = con.createStatement();
             
             ResultSet rs = st.executeQuery(query);
 
-            rs.next();
-            String returnVal = rs.getString(1);
-            
+            String returnVal = "";
+            if(rs.next()){
+                returnVal = rs.getString(1);
+            }
+
             st.close();
+            System.out.println("Got last question in round for " + roundId + ". " + "it was: " + returnVal);
 
             return(Integer.parseInt(returnVal) == questionId);
         } catch (SQLException ex) {
@@ -180,11 +186,12 @@ public class QuizDBLoader {
             Statement st = con.createStatement();
             
             ResultSet rs = st.executeQuery(query);
-
-            rs.next();
-            String returnVal = rs.getString(1);
-            
+            String returnVal = "";
+            if(rs.next()){
+                returnVal = rs.getString(1);
+            }
             st.close();
+            System.out.println("Got last round in quiz. it was: " + returnVal);
 
             return(Integer.parseInt(returnVal) == roundId);
         } catch (SQLException ex) {
@@ -228,9 +235,10 @@ public class QuizDBLoader {
             Statement st = con.createStatement();
             
             ResultSet rs = st.executeQuery(query);
-
-            rs.next();
-            userId = Integer.parseInt(rs.getString(1));
+            if(rs.next()){
+                userId = Integer.parseInt(rs.getString(1));
+            }
+            
             
             st.close();
         } catch (SQLException ex) {
@@ -253,9 +261,10 @@ public class QuizDBLoader {
             
             ResultSet rs = st.executeQuery(query2);
 
-            rs.next();
-            username = rs.getString(1);
-            username = rs.getString(2);
+            if(rs.next()){
+                username = rs.getString(1);
+                name = rs.getString(2);
+            }
             
             st.close();
         } catch (SQLException ex) {
@@ -298,9 +307,10 @@ public class QuizDBLoader {
             
             ResultSet rs = st.executeQuery(query);
 
-            rs.next();
-            roundId = Integer.parseInt(rs.getString(1));
-            
+            if(rs.next()){
+                roundId = Integer.parseInt(rs.getString(1));
+            }
+
             st.close();
         } catch (SQLException ex) {
             System.out.println("Exceptioned: " + ex.getMessage());
@@ -358,9 +368,10 @@ public class QuizDBLoader {
             
             ResultSet rs = st.executeQuery(query);
 
-            rs.next();
-            roundId = Integer.parseInt(rs.getString(1));
-            
+            if(rs.next()){
+                roundId = Integer.parseInt(rs.getString(1));
+            }
+
             st.close();
         } catch (SQLException ex) {
             System.out.println("Exceptioned: " + ex.getMessage());
@@ -441,7 +452,7 @@ public class QuizDBLoader {
     }
 
     public static String getFullQuiz(){
-        String query = "SELECT round, questionid, questiondata FROM questions ORDER BY round ASC, question ASC";
+        String query = "SELECT round, questionid, questiondata FROM questions ORDER BY round ASC, questionid ASC";
         String response = "";
 
         try {
@@ -450,7 +461,7 @@ public class QuizDBLoader {
             
             ResultSet rs = st.executeQuery(query);
 
-            if(rs.next()){
+            while(rs.next()){
                 response = response + "Round " + rs.getInt(1) + ", " + "Question " + rs.getInt(2) + ": " + rs.getString(3) + "\n";
             }
             
@@ -472,9 +483,10 @@ public class QuizDBLoader {
             
             ResultSet rs = st.executeQuery(query);
 
-            rs.next();
-            roundId = Integer.parseInt(rs.getString(1));
-            
+            if(rs.next()){
+                roundId = Integer.parseInt(rs.getString(1));
+            }
+
             st.close();
         } catch (SQLException ex) {
             System.out.println("Exceptioned: " + ex.getMessage());
@@ -484,6 +496,7 @@ public class QuizDBLoader {
 
         String query2 = "SELECT round, questionid, questiondata FROM questions WHERE round = '" + roundId + "' ORDER BY questionid ASC";
         String response = "";
+        
 
         try {
             Connection con = DriverManager.getConnection(url, user, null);
@@ -513,9 +526,10 @@ public class QuizDBLoader {
             
             ResultSet rs = st.executeQuery(query);
 
-            rs.next();
-            roundId = Integer.parseInt(rs.getString(1));
-            
+            if(rs.next()){
+                roundId = Integer.parseInt(rs.getString(1));
+            }
+
             st.close();
         } catch (SQLException ex) {
             System.out.println("Exceptioned: " + ex.getMessage());
@@ -534,9 +548,10 @@ public class QuizDBLoader {
             
             ResultSet rs = st.executeQuery(query);
 
-            rs.next();
-            userId = Integer.parseInt(rs.getString(1));
-            
+            if(rs.next()){
+                userId = Integer.parseInt(rs.getString(1));
+            }
+
             st.close();
         } catch (SQLException ex) {
             System.out.println("Exceptioned: " + ex.getMessage());
@@ -555,8 +570,11 @@ public class QuizDBLoader {
             
             ResultSet rs = st.executeQuery(query);
 
-            rs.next();
-            activeMessage = Integer.parseInt(rs.getString(1));
+            if(rs.next()){
+                if(rs.getString(1) != null){
+                    activeMessage = Integer.parseInt(rs.getString(1));
+                }
+            }
             
             st.close();
         } catch (SQLException ex) {
@@ -591,6 +609,9 @@ public class QuizDBLoader {
         String querytwo = "SELECT questionid, questiondata FROM questions WHERE round = '" + roundId + "' ORDER BY questionid ASC";
         Map<Integer, String> answers = new HashMap<>();
         Map<Integer, String> questions  = new HashMap<>();
+
+        
+        System.out.println("Got RoundAnswers for " + userId + "\n" + questions.toString() + "\n" + answers.toString() + "\n");
 
         try {
             Connection con = DriverManager.getConnection(url, user, null);
@@ -628,8 +649,8 @@ public class QuizDBLoader {
         for(Map.Entry<Integer, String> entry : questions.entrySet()){
             if(entry.getKey() <= currentQuestion){
                 returnVal = returnVal + "Question " + entry.getKey() + ": " + entry.getValue() + "\n";
+                returnVal = returnVal + "You answered: " + answers.get(entry.getKey()) + "\n";
             }
-            returnVal = returnVal + "You answered: " + answers.get(entry.getKey()) + "\n";
         }
 
         return returnVal;
@@ -660,6 +681,7 @@ public class QuizDBLoader {
 
     public static void updateActiveMessage(int userId, int messageId){
         String query = "UPDATE users SET activemessage = '" + messageId + "' WHERE userid = '" + userId + "'";
+        System.out.println("updating active message for: " + userId + " new message: " + messageId);
 
         try {
             Connection con = DriverManager.getConnection(url, user, null);
@@ -710,7 +732,6 @@ public class QuizDBLoader {
             Statement st = con.createStatement();
             
             ResultSet rs = st.executeQuery(query);
-
             if(rs.next()){
                 state = rs.getString(1);
             }
@@ -778,6 +799,8 @@ public class QuizDBLoader {
         String querytwo = "SELECT questionid, questiondata FROM questions WHERE round = '" + currentRound + "' ORDER BY questionid ASC";
         Map<Integer, String> answers = new HashMap<>();
         Map<Integer, String> questions  = new HashMap<>();
+
+        System.out.println("Got Editables for " + userId + "\n" + questions.toString() + "\n" + answers.toString() + "\n");
 
         try {
             Connection con = DriverManager.getConnection(url, user, null);
@@ -876,10 +899,12 @@ public class QuizDBLoader {
 
         try {
             Connection con = DriverManager.getConnection(url, user, null);
-            PreparedStatement pst = con.prepareStatement(query);
+            Statement st = con.createStatement();
             
-            int response = pst.executeUpdate();
-            return(response != 0);
+            ResultSet rs = st.executeQuery(query);
+            boolean returnVal = rs.next();
+            rs.close();
+            return returnVal;
         } catch (SQLException e) {
             e.printStackTrace();
         }

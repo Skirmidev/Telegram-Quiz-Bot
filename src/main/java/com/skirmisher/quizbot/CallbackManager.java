@@ -106,7 +106,7 @@ public class CallbackManager {
         //add to participants DB
         QuizDBLoader.addParticipant(userId,"notStarted");
         //delete their existing message, replace with one indicating they're in the quiz
-        DeleteMessage deleteControl = new DeleteMessage(userId+"", QuizDBLoader.getParticipantMessage(userId));
+        DeleteMessage deleteControl = new DeleteMessage(userId+"", update.getCallbackQuery().getMessage().getMessageId());
 
         try{
             bot.execute(deleteControl);
@@ -136,25 +136,32 @@ public class CallbackManager {
         inlineKeyboardMarkup.setKeyboard(Collections.singletonList(keyboard));
         
         SendMessage message = new SendMessage();
-        message.setChatId(update.getMessage().getChatId().toString());
+        message.setChatId(update.getCallbackQuery().getMessage().getChatId().toString());
 
         String date = QuizDBLoader.configValue("nextdate");
 
-        String information = "Welcome to the Irishfurries Quiz Bot! The next quiz is scheduled for" + date + "\n"
-        + "The quiz has not yet begun, you'll receive a message when it starts! Don't forget to join us via twitch on the day!" + "\n"
-        + "For mobile users, you can use the Twitch app's picture-in-picture mode to listen in while answering the quiz here in Telegram" + "\n"
-        + "For desktop users, simply open the quiz in your web browser with Telegram open via web, the desktop client, or your mobile device" + "\n"
-        + "Please read the terms and conditions for information on prizes and other important info!" + "\n"
-        + "If you need any more assistance, contact a member of the IrishFurries mod team" + "\n"
+        String information = "Welcome to the Irishfurries Quiz Bot! The next quiz is scheduled for" + date + "\n\n"
+        + "The quiz has not yet begun, you'll receive a message when it starts! Don't forget to join us via twitch on the day!" + "\n\n"
+        + "For mobile users, you can use the Twitch app's picture-in-picture mode to listen in while answering the quiz here in Telegram" + "\n\n"
+        + "For desktop users, simply open the quiz in your web browser with Telegram open via web, the desktop client, or your mobile device" + "\n\n"
+        + "Please read the terms and conditions for information on prizes and other important info!" + "\n\n"
+        + "If you need any more assistance, contact a member of the IrishFurries mod team" + "\n\n"
         + "";
 
         message.setText(information);
         message.setReplyMarkup(inlineKeyboardMarkup);
 
-        try{
-            Message response = bot.execute(message);
+        AnswerCallbackQuery answer = new AnswerCallbackQuery();
+        answer.setCallbackQueryId(update.getCallbackQuery().getId());
+        answer.setShowAlert(true);
+        answer.setText("You have succesfully registered for the quiz!");
 
-            QuizDBLoader.updateActiveMessage(update.getMessage().getFrom().getId(), response.getMessageId());
+        try{
+            bot.execute(answer);
+            Message response = bot.execute(message);
+            System.out.println("We have sent a new message - " + response);
+            System.out.println("We will now attempt to update the active message");
+            QuizDBLoader.updateActiveMessage(update.getCallbackQuery().getFrom().getId(), response.getMessageId());
         } catch ( TelegramApiException e) {
             e.printStackTrace();
         }
@@ -165,7 +172,7 @@ public class CallbackManager {
         //remove from participantsDB
         QuizDBLoader.removeParticipant(userId);
         //delete their existing message, replace with original one
-        DeleteMessage deleteControl = new DeleteMessage(userId+"", QuizDBLoader.getParticipantMessage(userId));
+        DeleteMessage deleteControl = new DeleteMessage(userId+"", update.getCallbackQuery().getMessage().getMessageId());
 
         try{
             bot.execute(deleteControl);
@@ -195,16 +202,16 @@ public class CallbackManager {
         inlineKeyboardMarkup.setKeyboard(Collections.singletonList(keyboard));
         
         SendMessage message = new SendMessage();
-        message.setChatId(update.getMessage().getChatId().toString());
+        message.setChatId(update.getCallbackQuery().getMessage().getChatId().toString());
 
         String date = QuizDBLoader.configValue("nextdate");
 
-        String information = "Welcome to the Irishfurries Quiz Bot! The next quiz is scheduled for" + date + "\n"
-        + "To join us, please register by clicking the button below. Don't forget to join us via twitch on the day!" + "\n"
-        + "For mobile users, you can use the Twitch app's picture-in-picture mode to listen in while answering the quiz here in Telegram" + "\n"
-        + "For desktop users, simply open the quiz in your web browser with Telegram open via web, the desktop client, or your mobile device" + "\n"
-        + "Please read the terms and conditions for information on prizes and other important info!" + "\n"
-        + "If you need any more assistance, contact a member of the IrishFurries mod team" + "\n"
+        String information = "Welcome to the Irishfurries Quiz Bot! The next quiz is scheduled for" + date + "\n\n"
+        + "To join us, please register by clicking the button below. Don't forget to join us via twitch on the day!" + "\n\n"
+        + "For mobile users, you can use the Twitch app's picture-in-picture mode to listen in while answering the quiz here in Telegram" + "\n\n"
+        + "For desktop users, simply open the quiz in your web browser with Telegram open via web, the desktop client, or your mobile device" + "\n\n"
+        + "Please read the terms and conditions for information on prizes and other important info!" + "\n\n"
+        + "If you need any more assistance, contact a member of the IrishFurries mod team" + "\n\n"
         + "";
 
 
@@ -212,7 +219,13 @@ public class CallbackManager {
         message.setText(information);
         message.setReplyMarkup(inlineKeyboardMarkup);
 
+        AnswerCallbackQuery answer = new AnswerCallbackQuery();
+        answer.setCallbackQueryId(update.getCallbackQuery().getId());
+        answer.setShowAlert(true);
+        answer.setText("You are no longer registered for the quiz");
+
         try{
+            bot.execute(answer);
             Message response = bot.execute(message);
 
             QuizDBLoader.updateActiveMessage(userId, response.getMessageId());
@@ -224,7 +237,7 @@ public class CallbackManager {
     public static void edit(Context context, Update update, AvalitechQuizSystem bot, String[] callback){
         //delete their existing control message
         int userId = update.getCallbackQuery().getFrom().getId();
-        DeleteMessage deleteControl = new DeleteMessage(userId+"", QuizDBLoader.getParticipantMessage(userId));
+        DeleteMessage deleteControl = new DeleteMessage(userId+"", update.getCallbackQuery().getMessage().getMessageId());
 
         try{
             bot.execute(deleteControl);
@@ -242,15 +255,21 @@ public class CallbackManager {
         String questionData = QuizDBLoader.getQuestionData(currentRound, Integer.parseInt(callback[2]));
 
         SendMessage message = new SendMessage();
-        message.setChatId(update.getMessage().getChatId().toString());
+        message.setChatId(update.getCallbackQuery().getMessage().getChatId().toString());
         String txt = "Please input your new answer for the question: " + questionData + "\n" + 
         "You previously answered with: " + QuizDBLoader.getAnswer(userId, currentRound, Integer.parseInt(callback[2]));
         message.setText(txt);
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         inlineKeyboardMarkup.setKeyboard(Collections.singletonList(keyboard));
         message.setReplyMarkup(inlineKeyboardMarkup);
+        
+
+        AnswerCallbackQuery answer = new AnswerCallbackQuery();
+        answer.setCallbackQueryId(update.getCallbackQuery().getId());
+        answer.setShowAlert(false);
 
         try{
+            bot.execute(answer);
             Message response = bot.execute(message);
 
             QuizDBLoader.updateActiveMessage(userId, response.getMessageId());
@@ -316,8 +335,15 @@ public class CallbackManager {
             message.setChatId(update.getMessage().getChatId().toString());
             message.setText(response);
             message.setReplyMarkup(inlineKeyboardMarkup);
+            
+
+            AnswerCallbackQuery answer = new AnswerCallbackQuery();
+            answer.setCallbackQueryId(update.getCallbackQuery().getId());
+            answer.setShowAlert(false);
+            answer.setText("Please select which answer you would like to replace");
 
             try{
+                bot.execute(answer);
                 Message responseMes = bot.execute(message);
     
                 QuizDBLoader.updateActiveMessage(userId, responseMes.getMessageId());
@@ -347,7 +373,7 @@ public class CallbackManager {
         //replace with one showing all the questions asked this round and their answers
         final List<InlineKeyboardButton> keyboard = new ArrayList<InlineKeyboardButton>(3);
         SendMessage message = new SendMessage();
-        message.setChatId(update.getMessage().getChatId().toString());
+        message.setChatId(update.getCallbackQuery().getMessage().getChatId().toString());
         String answersSoFar = QuizDBLoader.getRoundAnswers(currentRound, userId);
         message.setText(answersSoFar);
 
@@ -372,7 +398,15 @@ public class CallbackManager {
 
         message.setReplyMarkup(inlineKeyboardMarkup);
 
+        
+
+        AnswerCallbackQuery answer = new AnswerCallbackQuery();
+        answer.setCallbackQueryId(update.getCallbackQuery().getId());
+        answer.setShowAlert(false);
+        answer.setText("Editing cancelled");
+
         try{
+            bot.execute(answer);
             Message response = bot.execute(message);
 
             QuizDBLoader.updateActiveMessage(userId, response.getMessageId());
@@ -401,10 +435,13 @@ public class CallbackManager {
         int currentQuestion = Integer.parseInt(QuizDBLoader.configValue("currentquestion"));
         int nextQuestion = currentQuestion+1;
         int expectedNextRoundMaster = QuizDBLoader.getMasterByRound(currentRound);
+
+        System.out.println("Expected next round: " + expectedNextRoundMaster + " message sent by " + update.getCallbackQuery().getFrom().getId());
         if(update.getCallbackQuery().getFrom().getId() == expectedNextRoundMaster){
             //update the current question
             QuizDBLoader.updateConfigValue("currentquestion", ""+nextQuestion);
             String nextQuestionData = QuizDBLoader.getQuestionData(currentRound, nextQuestion);
+
             //go through list of all participants, for foreach
             ArrayList<User> users = QuizDBLoader.getAllParticipants();
             for(User u : users){
@@ -413,18 +450,21 @@ public class CallbackManager {
 
                 QuizDBLoader.setParticipantState(u.getId(), "answering");
 
-                //delete the existing message
-                DeleteMessage deleteControl = new DeleteMessage(u.getId().toString(), QuizDBLoader.getParticipantMessage(u.getId()));
-        
-                try{
-                    bot.execute(deleteControl);
-                } catch ( TelegramApiException e) {
-                    e.printStackTrace();
+                System.out.println("Gonna try delete message for: " + u.getId() + " - " + u.getFirstName());
+
+                int participantMessage = QuizDBLoader.getParticipantMessage(u.getId());
+                if(participantMessage != 0){
+                    DeleteMessage deleteControl = new DeleteMessage(u.getId().toString(), participantMessage);
+                    try{
+                        bot.execute(deleteControl);
+                    } catch ( TelegramApiException e) {
+                        e.printStackTrace();
+                    }
                 }
 
                 final List<InlineKeyboardButton> keyboard = new ArrayList<InlineKeyboardButton>(2);
                 SendMessage message = new SendMessage();
-                message.setChatId(update.getMessage().getChatId().toString());
+                message.setChatId(u.getId().toString());
                 String answersSoFar = QuizDBLoader.getRoundAnswers(currentRound, u.getId());
                 message.setText(answersSoFar + "\n" + " Question " + nextQuestion + ": " + "\n" + nextQuestionData + "\n" + "Please submit your answer now...");
                 
@@ -444,6 +484,8 @@ public class CallbackManager {
 
                 message.setReplyMarkup(inlineKeyboardMarkup);
 
+                
+
                 try{
                     Message response = bot.execute(message);
 
@@ -451,6 +493,29 @@ public class CallbackManager {
                 } catch ( TelegramApiException e) {
                     e.printStackTrace();
                 }
+            }
+            AnswerCallbackQuery answer = new AnswerCallbackQuery();
+            answer.setCallbackQueryId(update.getCallbackQuery().getId());
+            answer.setShowAlert(false);
+            answer.setText("Updated to next question");
+
+            QuizManager.resetController(bot);
+
+            try{
+                bot.execute(answer);
+            } catch (TelegramApiException e){
+                e.printStackTrace();
+            }
+        } else {
+            
+            AnswerCallbackQuery answer = new AnswerCallbackQuery();
+            answer.setCallbackQueryId(update.getCallbackQuery().getId());
+            answer.setShowAlert(true);
+            answer.setText("Only the next question master should press this button");
+            try{
+                bot.execute(answer);
+            } catch (TelegramApiException e){
+                e.printStackTrace();
             }
         }
         //if not the expected clicker, do nothing
@@ -480,7 +545,7 @@ public class CallbackManager {
 
                 final List<InlineKeyboardButton> keyboard = new ArrayList<InlineKeyboardButton>(2);
                 SendMessage message = new SendMessage();
-                message.setChatId(update.getMessage().getChatId().toString());
+                message.setChatId(update.getCallbackQuery().getMessage().getChatId().toString());
                 message.setText("Round " + callback[2] + " has begun! The first question is: " + "\n" + QuizDBLoader.getQuestionData(Integer.parseInt(callback[2]), 1) + "\n" + "Please submit your answer now...");
                 
                 InlineKeyboardButton but2 = new InlineKeyboardButton();
@@ -507,8 +572,32 @@ public class CallbackManager {
                     e.printStackTrace();
                 }
             }
+            
+            AnswerCallbackQuery answer = new AnswerCallbackQuery();
+            answer.setCallbackQueryId(update.getCallbackQuery().getId());
+            answer.setShowAlert(false);
+            answer.setText("Updated to next round");
+            
+            QuizManager.resetController(bot);
+
+            try{
+                bot.execute(answer);
+            } catch (TelegramApiException e){
+                e.printStackTrace();
+            }
     
             //delete controller message, send new one with updated values
+        } else {
+            
+            AnswerCallbackQuery answer = new AnswerCallbackQuery();
+            answer.setCallbackQueryId(update.getCallbackQuery().getId());
+            answer.setShowAlert(true);
+            answer.setText("Only the next question master should press this button");
+            try{
+                bot.execute(answer);
+            } catch (TelegramApiException e){
+                e.printStackTrace();
+            }
         }
         //if not the expected clicker, do nothing
     }
@@ -548,6 +637,18 @@ public class CallbackManager {
         try{
             bot.execute(deleteControl);
         } catch ( TelegramApiException e) {
+            e.printStackTrace();
+        }
+
+        
+        AnswerCallbackQuery answer = new AnswerCallbackQuery();
+        answer.setCallbackQueryId(update.getCallbackQuery().getId());
+        answer.setShowAlert(false);
+        answer.setText("Quiz has ended");
+
+        try{
+            bot.execute(answer);
+        } catch (TelegramApiException e){
             e.printStackTrace();
         }
 
