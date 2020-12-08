@@ -712,6 +712,7 @@ public class QuizDBLoader {
     }
 
     public static void setParticipantState(int userId, String state){
+        System.out.println("QuizDBLoader::setParticipantState start");
         String query = "UPDATE participants SET chatstate = '" + state + "' WHERE userid = '" + userId + "'";
         try {
             Connection con = DriverManager.getConnection(url, user, null);
@@ -721,6 +722,7 @@ public class QuizDBLoader {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        System.out.println("QuizDBLoader::setParticipantState end");
     }
 
     public static String getParticipantState(int userId){

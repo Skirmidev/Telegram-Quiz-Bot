@@ -44,9 +44,14 @@ public class CallbackManager {
                 edit(context, update, bot, callback);
                 break;
             
-            case "selectEdit": //roundid questionid
+            case "selectedit": //roundid questionid
                 //peacefur(context, update, bot);
                 selectEdit(context, update, bot);
+                break;
+    
+            case "canceledit": //roundid questionid
+                //peacefur(context, update, bot);
+                cancelEdit(context, update, bot);
                 break;
         }
         return context;
@@ -159,8 +164,6 @@ public class CallbackManager {
         try{
             bot.execute(answer);
             Message response = bot.execute(message);
-            System.out.println("We have sent a new message - " + response);
-            System.out.println("We will now attempt to update the active message");
             QuizDBLoader.updateActiveMessage(update.getCallbackQuery().getFrom().getId(), response.getMessageId());
         } catch ( TelegramApiException e) {
             e.printStackTrace();
@@ -235,44 +238,57 @@ public class CallbackManager {
     }
 
     public static void edit(Context context, Update update, AvalitechQuizSystem bot, String[] callback){
+        System.out.println("Received 'edit' callback from " + update.getCallbackQuery().getFrom().getId());
         //delete their existing control message
         int userId = update.getCallbackQuery().getFrom().getId();
         DeleteMessage deleteControl = new DeleteMessage(userId+"", update.getCallbackQuery().getMessage().getMessageId());
+        System.out.println("Edit: Alpha");
 
         try{
             bot.execute(deleteControl);
         } catch ( TelegramApiException e) {
             e.printStackTrace();
         }
+        System.out.println("Edit: Beta");
 
         final List<InlineKeyboardButton> keyboard = new ArrayList<InlineKeyboardButton>(1);
         InlineKeyboardButton but = new InlineKeyboardButton();
         but.setText("Cancel Editing");
         but.setCallbackData("usr:canceledit");
         keyboard.add(but);
+        System.out.println("Edit: Charlie");
 
         int currentRound = Integer.parseInt(QuizDBLoader.configValue("currentround"));
         String questionData = QuizDBLoader.getQuestionData(currentRound, Integer.parseInt(callback[2]));
+        System.out.println("Edit: Delta");
 
         SendMessage message = new SendMessage();
-        message.setChatId(update.getCallbackQuery().getMessage().getChatId().toString());
+        //message.setChatId(update.getCallbackQuery().getMessage().getChatId().toString());
+        message.setChatId(update.getCallbackQuery().getFrom().getId().toString());
         String txt = "Please input your new answer for the question: " + questionData + "\n" + 
         "You previously answered with: " + QuizDBLoader.getAnswer(userId, currentRound, Integer.parseInt(callback[2]));
         message.setText(txt);
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         inlineKeyboardMarkup.setKeyboard(Collections.singletonList(keyboard));
         message.setReplyMarkup(inlineKeyboardMarkup);
+        System.out.println("Edit: Echo");
         
 
         AnswerCallbackQuery answer = new AnswerCallbackQuery();
         answer.setCallbackQueryId(update.getCallbackQuery().getId());
         answer.setShowAlert(false);
+        System.out.println("Edit: Farragut");
 
         try{
             bot.execute(answer);
+            System.out.println("Edit: Gryphon");
             Message response = bot.execute(message);
+            System.out.println("Edit: Hat");
+            QuizDBLoader.setParticipantState(userId, "edit:" + currentRound + ":" + callback[2]);
+            System.out.println("Edit: Indigo");
 
             QuizDBLoader.updateActiveMessage(userId, response.getMessageId());
+            System.out.println("Edit: Jalapeno");
         } catch ( TelegramApiException e) {
             e.printStackTrace();
         }
@@ -282,20 +298,23 @@ public class CallbackManager {
         //one control button, canceledit, will do the same as the one in selectEdit
         //set their state to edit
 
-        QuizDBLoader.setParticipantState(userId, "edit");
     }
 
     public static void selectEdit(Context context, Update update, AvalitechQuizSystem bot){
+        System.out.println("CallbackManager: selectEdit alpha");
         //delete their existing message
         //delete the control message
         int currentRound = Integer.parseInt(QuizDBLoader.configValue("currentround"));
         int userId = update.getCallbackQuery().getFrom().getId();
+        System.out.println("CallbackManager: selectEdit beta");
 
         
         HashMap<String, String> editables = QuizDBLoader.getEditables(currentRound, userId);
+        System.out.println("CallbackManager: selectEdit charlie");
 
         if(editables.size() > 0){
             DeleteMessage deleteControl = new DeleteMessage(userId+"", QuizDBLoader.getParticipantMessage(userId));
+            System.out.println("CallbackManager: selectEdit delta");
 
             try{
                 bot.execute(deleteControl);
@@ -306,20 +325,32 @@ public class CallbackManager {
             final List<InlineKeyboardButton> keyboard = new ArrayList<InlineKeyboardButton>(editables.size()+1);
 
             String response = "";
+            System.out.println("CallbackManager: selectEdit echo");
 
+            int i = 0;
             for(Map.Entry<String, String> editab : editables.entrySet()){
-
-            }
-            for(int i = 0; i < editables.size(); i++){
-                int j = i+1;
-                response = response + "Question " + j + ": " + editables.get(i) + "\n";
-                response = response + "Your Answer: " + editables.get(i) + "\n"; // TODO: a map should work as a datatype here
+                response = response + "Question " + (i+1) + ": " + editab.getKey() + "\n"; 
+                response = response + "Your Answer: " + editab.getValue() + "\n"; 
 
                 InlineKeyboardButton but = new InlineKeyboardButton();
-                but.setText(j+"");
-                but.setCallbackData("usr:edit:" + j);
+                but.setText((i+1)+"");
+                but.setCallbackData("usr:edit:" + (i+1));
                 keyboard.add(but);
+
+                i++;
             }
+            // for(int i = 0; i < editables.size(); i++){
+            //     System.out.println("selectEdit loop - editable:" + i + " is "+ editables.get(i));
+            //     int j = i+1;
+            //     response = response + "Question " + j + ": " + editables.get(i) + "\n"; //TODO this isn't how we traverse, use the for loop above if we can
+            //     response = response + "Your Answer: " + editables.get(i) + "\n"; // TODO: a map should work as a datatype here
+
+            //     InlineKeyboardButton but = new InlineKeyboardButton();
+            //     but.setText(j+"");
+            //     but.setCallbackData("usr:edit:" + j);
+            //     keyboard.add(but);
+            // }
+            System.out.println("CallbackManager: selectEdit fett");
             response = response + "Please select which question you would like to edit your answer for: ";
             //should be a button for each editable, callback should send round and question
             //be sure to include a cancel button
@@ -327,34 +358,43 @@ public class CallbackManager {
             InlineKeyboardButton but = new InlineKeyboardButton();
             but.setText("Cancel Editing");
             but.setCallbackData("usr:canceledit");
+            System.out.println("CallbackManager: selectEdit gryphon");
 
             InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
             inlineKeyboardMarkup.setKeyboard(Collections.singletonList(keyboard));
+            System.out.println("CallbackManager: selectEdit halo");
 
             SendMessage message = new SendMessage();
-            message.setChatId(update.getMessage().getChatId().toString());
+            message.setChatId(update.getCallbackQuery().getMessage().getChatId().toString());
             message.setText(response);
             message.setReplyMarkup(inlineKeyboardMarkup);
+            System.out.println("CallbackManager: selectEdit indigo");
             
 
             AnswerCallbackQuery answer = new AnswerCallbackQuery();
             answer.setCallbackQueryId(update.getCallbackQuery().getId());
             answer.setShowAlert(false);
             answer.setText("Please select which answer you would like to replace");
+            System.out.println("CallbackManager: selectEdit jamon");
 
             try{
                 bot.execute(answer);
+                System.out.println("CallbackManager: selectEdit kilo");
                 Message responseMes = bot.execute(message);
+                System.out.println("CallbackManager: selectEdit lemon");
     
                 QuizDBLoader.updateActiveMessage(userId, responseMes.getMessageId());
+                System.out.println("CallbackManager: selectEdit monaco");
             } catch ( TelegramApiException e) {
                 e.printStackTrace();
             }
 
             QuizDBLoader.setParticipantState(userId, "editSelect");
+            System.out.println("CallbackManager: selectEdit november");
             //set their state to editSelect
         } else {
             //send a callbackqueryresponse saying there's answers this round, somehow
+        System.out.println("CallbackManager: selectEdit absolutefuckup");
         }
     }
 
@@ -379,7 +419,7 @@ public class CallbackManager {
 
         InlineKeyboardButton but = new InlineKeyboardButton();
         but.setText("Edit Previous Answer");
-        but.setCallbackData("usr:edit");
+        but.setCallbackData("usr:selectedit");
         
         InlineKeyboardButton but2 = new InlineKeyboardButton();
         but2.setText("Join us on Twitch!");
@@ -429,12 +469,14 @@ public class CallbackManager {
             //if awaiting, delete existing message, send new message with latest question
 
         //delete controller message, send new one with updated values
+        System.out.println("nextQuestion: Alpha");
 
         //check if sender is current round controller
         int currentRound = Integer.parseInt(QuizDBLoader.configValue("currentround"));
         int currentQuestion = Integer.parseInt(QuizDBLoader.configValue("currentquestion"));
         int nextQuestion = currentQuestion+1;
         int expectedNextRoundMaster = QuizDBLoader.getMasterByRound(currentRound);
+        System.out.println("nextQuestion: Beta");
 
         System.out.println("Expected next round: " + expectedNextRoundMaster + " message sent by " + update.getCallbackQuery().getFrom().getId());
         if(update.getCallbackQuery().getFrom().getId() == expectedNextRoundMaster){
@@ -488,18 +530,23 @@ public class CallbackManager {
 
                 try{
                     Message response = bot.execute(message);
+                    System.out.println("nextQuestion: Charlie");
 
                     QuizDBLoader.updateActiveMessage(u.getId(), response.getMessageId());
+                    System.out.println("nextQuestion: Delta");
                 } catch ( TelegramApiException e) {
                     e.printStackTrace();
                 }
             }
+            System.out.println("nextQuestion: Echo");
             AnswerCallbackQuery answer = new AnswerCallbackQuery();
             answer.setCallbackQueryId(update.getCallbackQuery().getId());
             answer.setShowAlert(false);
             answer.setText("Updated to next question");
+            System.out.println("nextQuestion: Farragut");
 
             QuizManager.resetController(bot);
+            System.out.println("nextQuestion: Gryphon");
 
             try{
                 bot.execute(answer);
@@ -545,7 +592,7 @@ public class CallbackManager {
 
                 final List<InlineKeyboardButton> keyboard = new ArrayList<InlineKeyboardButton>(2);
                 SendMessage message = new SendMessage();
-                message.setChatId(update.getCallbackQuery().getMessage().getChatId().toString());
+                message.setChatId(u.getId().toString());
                 message.setText("Round " + callback[2] + " has begun! The first question is: " + "\n" + QuizDBLoader.getQuestionData(Integer.parseInt(callback[2]), 1) + "\n" + "Please submit your answer now...");
                 
                 InlineKeyboardButton but2 = new InlineKeyboardButton();

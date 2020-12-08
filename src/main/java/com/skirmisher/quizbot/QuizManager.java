@@ -196,17 +196,19 @@ public class QuizManager {
         System.out.println("QuizManager: resetController");
         //delete existing controller
         if(QuizDBLoader.configValue("controllermessage").equals("")){
+            System.out.println("no existing controller");
             //no existing controller
         } else {
             String controllerMessage = QuizDBLoader.configValue("controllermessage");
-            if(!controllerMessage.equals("")){
-                DeleteMessage delete = new DeleteMessage(bot.getGroupChatId().toString(), Integer.parseInt(controllerMessage));
+            System.out.println("Controller delete vals: " + bot.getGroupChatId().toString() + " - " + controllerMessage);
+            DeleteMessage delete = new DeleteMessage(bot.getGroupChatId().toString(), Integer.parseInt(controllerMessage));
+            System.out.println("controller message found and being deleted");
 
-                try{
-                    bot.execute(delete);
-                } catch ( TelegramApiException e) {
-                    e.printStackTrace();
-                }
+            try{
+                bot.execute(delete);
+            } catch ( TelegramApiException e) {
+                System.out.println("oh no, exception deleting existing controller");
+                e.printStackTrace();
             }
         }
 
@@ -609,7 +611,7 @@ public class QuizManager {
 
         InlineKeyboardButton but = new InlineKeyboardButton();
         but.setText("Edit Previous Answer");
-        but.setCallbackData("usr:edit");
+        but.setCallbackData("usr:selectedit");
         
         InlineKeyboardButton but2 = new InlineKeyboardButton();
         but2.setText("Join us on Twitch!");
@@ -632,6 +634,7 @@ public class QuizManager {
             Message response = bot.execute(message);
 
             QuizDBLoader.updateActiveMessage(update.getMessage().getFrom().getId(), response.getMessageId());
+            QuizDBLoader.setParticipantState(update.getMessage().getFrom().getId(), "awaiting");
         } catch ( TelegramApiException e) {
             e.printStackTrace();
         }
@@ -664,11 +667,15 @@ public class QuizManager {
     }
     
     public static void edit(Update update, AvalitechQuizSystem bot, String [] args){
-        System.out.println("QuizManager: Participant: edit");
+        System.out.println("QuizManager: Participant: edit - args: ");
+        for(int i = 0; i < args.length; i++){
+            System.out.println("arg[" + i + "]: " + args[i]);
+        }
         //delete existing message
 
         DeleteMessage deleteControl = new DeleteMessage(update.getMessage().getChatId().toString(), QuizDBLoader.getParticipantMessage(update.getMessage().getFrom().getId()));
         DeleteMessage deleteUser = new DeleteMessage(update.getMessage().getChatId().toString(), update.getMessage().getMessageId());
+        System.out.println("QuizManager: Participant: edit - Alpha");
 
         try{
             bot.execute(deleteControl);
@@ -681,10 +688,12 @@ public class QuizManager {
         String answer = update.getMessage().getText();
         int round = Integer.parseInt(args[1]);
         int question = Integer.parseInt(args[2]);
+        System.out.println("QuizManager: Participant: edit - Beta");
 
         QuizDBLoader.updateAnswer(round, question, update.getMessage().getFrom().getId(), answer);
 
         String answersSoFar = QuizDBLoader.getRoundAnswers(round, update.getMessage().getFrom().getId());
+        System.out.println("QuizManager: Participant: edit - Charlie");
 
         SendMessage message = new SendMessage();
         message.setChatId(update.getMessage().getChatId().toString());
@@ -692,7 +701,7 @@ public class QuizManager {
 
         InlineKeyboardButton but = new InlineKeyboardButton();
         but.setText("Edit Previous Answer");
-        but.setCallbackData("usr:edit");
+        but.setCallbackData("usr:selectedit");
         
         InlineKeyboardButton but2 = new InlineKeyboardButton();
         but2.setText("Join us on Twitch!");
@@ -709,11 +718,15 @@ public class QuizManager {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         inlineKeyboardMarkup.setKeyboard(Collections.singletonList(keyboard));
         message.setReplyMarkup(inlineKeyboardMarkup);
+        System.out.println("QuizManager: Participant: edit - Delta");
 
         try{
             Message response = bot.execute(message);
+            System.out.println("QuizManager: Participant: edit - Echo");
 
             QuizDBLoader.updateActiveMessage(update.getMessage().getFrom().getId(), response.getMessageId());
+            QuizDBLoader.setParticipantState(update.getMessage().getFrom().getId(), "answering");
+            System.out.println("QuizManager: Participant: edit - Feck");
         } catch ( TelegramApiException e) {
             e.printStackTrace();
         }

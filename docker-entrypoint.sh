@@ -58,6 +58,7 @@ then
 
     while IFS=, read -r element value; do
         psql -U postgres -d quizbot-db -c"INSERT INTO config ( element, value ) VALUES ('$element', '$value');"
+        echo "inserting $element $value";
     done < configValues.csv
 
 else
