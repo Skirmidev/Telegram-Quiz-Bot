@@ -912,4 +912,35 @@ public class QuizDBLoader {
         }
         return false;
     }
+
+    public static SendDocument getResultsForRound(int round){
+        String query = "SELECT answers.userid, questions.questiondata, answers.answer FROM answers INNER JOIN questions ON questions.questionid = answers.questionid WHERE answers.round = '" + round + "' ORDER BY answers.userid ASC";
+
+        try {
+            Connection con = DriverManager.getConnection(url, user, null);
+            Statement st = con.createStatement();
+            
+            ResultSet rs = st.executeQuery(query);
+
+            BufferedWriter writer = new BufferedWriter(new FileWriter("/tmp" + "/RoundResults-" + round + ".csv"));
+
+            while(rs.next()){
+                writer.write(rs.getInt(1) + "," + rs.getString(2) + "," + rs.getString(3));
+            }
+
+            writer.close();
+            st.close();
+        } catch (SQLException | IOException e) {
+            e.printStackTrace();
+        }
+
+        File statsFile = new File("/tmp" + "/RoundResults-" + round + ".csv");
+        SendDocument doc = new SendDocument();
+        InputFile inFile = new InputFile(statsFile);
+
+        doc.setDocument(inFile);
+        doc.setCaption(LocalDateTime.now().toString());
+
+        return doc;
+    }
 }

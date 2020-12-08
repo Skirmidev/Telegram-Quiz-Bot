@@ -19,6 +19,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import java.util.Collections;
 import java.util.Map;
 import java.util.HashMap;
+import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 
 public class CallbackManager {
 
@@ -633,7 +634,19 @@ public class CallbackManager {
                 e.printStackTrace();
             }
     
-            //delete controller message, send new one with updated values
+            //send along the results of the final round
+            int currentRound = Integer.parseInt(QuizDBLoader.configValue("currentround"));
+            currentRound = currentRound-1;
+        
+            SendDocument doc = QuizDBLoader.getResultsForRound(currentRound);
+            doc.setChatId(bot.getGroupChatId().toString());
+            doc.setCaption("Results for round " + currentRound);
+
+            try{
+                bot.execute(doc);
+            } catch (TelegramApiException e){
+                e.printStackTrace();
+            }
         } else {
             
             AnswerCallbackQuery answer = new AnswerCallbackQuery();
@@ -698,7 +711,19 @@ public class CallbackManager {
         } catch (TelegramApiException e){
             e.printStackTrace();
         }
+        
+        //send along the results of the final round
+        int currentRound = Integer.parseInt(QuizDBLoader.configValue("currentround"));
+        
+        SendDocument doc = QuizDBLoader.getResultsForRound(currentRound);
+        doc.setChatId(bot.getGroupChatId().toString());
+        doc.setCaption("Results for round " + currentRound);
 
+        try{
+            bot.execute(doc);
+        } catch (TelegramApiException e){
+            e.printStackTrace();
+        }
     }
 
     // public static void yesStart(Context context, Update update, AvalitechQuizSystem bot, String[] callback){
